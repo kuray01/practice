@@ -1,14 +1,1204 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Sapphire - Дневник питания</title>
     <link rel="icon" href="{{ url_for('static', filename='img/logo.png') }}" type="image/png" />
-    <link href="https://fonts.googleapis.com/css2?family=Italiana&family=Montserrat:wght@700&display=swap" rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns"></script>
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #B2D8D8;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .sidebar {
+            background-color: #66B2B2;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .menu-item {
+            color: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .menu-item:hover {
+            background-color: #4A8F8F;
+        }
+
+        .menu-item.active {
+            background-color: #4A8F8F;
+        }
+
+        .main-content {
+            padding: 20px;
+        }
+
+        .section {
+            display: none;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background-color: #66B2B2;
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+        }
+
+        .progress {
+            height: 25px;
+            background-color: #E0E0E0;
+            border-radius: 12px;
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            background-color: #66B2B2;
+            border-radius: 12px;
+            height: 25px;
+        }
+
+        .progress-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 25px;
+        }
+
+        .nutrition-box {
+            background-color: #F5F5F5;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .btn-primary {
+            background-color: #66B2B2;
+            border-color: #66B2B2;
+        }
+
+        .btn-primary:hover {
+            background-color: #4A8F8F;
+            border-color: #4A8F8F;
+        }
+
+        .section-title {
+            color: #66B2B2;
+            margin-bottom: 20px;
+        }
+
+        .article-card {
+            transition: transform 0.3s;
+        }
+
+        .article-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .recipe-card {
+            transition: transform 0.3s;
+        }
+
+        .recipe-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .weight-chart {
+            margin-top: 20px;
+        }
+
+        .recommendation-box {
+            background-color: #F8F9FA;
+            border-left: 4px solid #66B2B2;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .logo-text {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 0;
+        }
+
+        .logo-subtext {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .greeting {
+            font-size: 1.5rem;
+            color: #66B2B2;
+            margin-bottom: 20px;
+        }
+
+        .meal-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .meal-item:last-child {
+            border-bottom: none;
+        }
+
+        .meal-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .article-content {
+            display: none;
+        }
+
+        .article-content.active {
+            display: block;
+        }
+
+        .recipe-search {
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
+
 <body>
-    
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Боковое меню -->
+            <div class="col-md-3 col-lg-2 sidebar">
+                <h3 class="logo-text">Sapphire</h3>
+                <p class="logo-subtext">дневник питания</p>
+                <div class="menu-item active" data-section="home">
+                    <i class="bi bi-house-door"></i> Главная
+                </div>
+                <div class="menu-item" data-section="weight">
+                    <i class="bi bi-graph-up"></i> Питание и вес
+                </div>
+                <div class="menu-item" data-section="articles">
+                    <i class="bi bi-journal-text"></i> Статьи
+                </div>
+                <div class="menu-item" data-section="recipes">
+                    <i class="bi bi-book"></i> Рецепты
+                </div>
+                <div class="menu-item" data-section="settings">
+                    <i class="bi bi-gear"></i> Настройки
+                </div>
+                <div class="menu-item" onclick="window.location.href='/'">
+                    <i class="bi bi-box-arrow-right"></i> Выйти
+                </div>
+            </div>
+
+            <!-- Основной контент -->
+            <div class="col-md-9 col-lg-10 main-content">
+                <!-- Главная -->
+                <div class="section active" id="home">
+                    <div class="greeting" id="greeting"></div>
+                    <h2 class="section-title">Рекомендации по питанию</h2>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Макронутриенты</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="recommendation-box">
+                                        <h6>Белки:</h6>
+                                        <p>{{ (user_data.daily_calorie_target * 0.3 / 4)|round }} г</p>
+                                    </div>
+                                    <div class="recommendation-box">
+                                        <h6>Жиры:</h6>
+                                        <p>{{ (user_data.daily_calorie_target * 0.3 / 9)|round }} г</p>
+                                    </div>
+                                    <div class="recommendation-box">
+                                        <h6>Углеводы:</h6>
+                                        <p>{{ (user_data.daily_calorie_target * 0.4 / 4)|round }} г</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Калории сегодня</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="progress">
+                                        <div class="progress-bar" role="progressbar"
+                                            style="width: {{ (user_data.calories_today / user_data.daily_calorie_target * 100)|round }}%">
+                                            <span class="progress-text">
+                                                {{ user_data.calories_today }}/{{ user_data.daily_calorie_target }} ккал
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <h6>Целевые калории:</h6>
+                                        <p>{{ user_data.daily_calorie_target }} ккал/день</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Питание и вес -->
+                <div class="section" id="weight">
+                    <h2 class="section-title">Питание и вес</h2>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">График изменений веса</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="weightChart" class="weight-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Добавить новый вес</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="weightForm">
+                                        <div class="mb-3">
+                                            <label for="weight" class="form-label">Вес (кг)</label>
+                                            <input type="number" class="form-control" id="weight" name="weight"
+                                                step="0.1" min="0" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Добавить</button>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Добавить прием пищи</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="mealForm">
+                                        <div class="mb-3">
+                                            <label for="mealName" class="form-label">Название блюда</label>
+                                            <input type="text" class="form-control" id="mealName" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="mealCategory" class="form-label">Категория</label>
+                                            <select class="form-select" id="mealCategory" required>
+                                                <option value="Завтрак">Завтрак</option>
+                                                <option value="Обед">Обед</option>
+                                                <option value="Ужин">Ужин</option>
+                                                <option value="Перекус">Перекус</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="mealCalories" class="form-label">Калории</label>
+                                            <input type="number" class="form-control" id="mealCalories" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Добавить</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">История приемов пищи</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="mealsList">
+                                {% for item in history %}
+                                {% if item.name and item.category and item.calories %}
+                                <div class="meal-item" data-id="{{ item.id }}">
+                                    <div>
+                                        <strong>{{ item.name }}</strong> ({{ item.category }}) - {{ item.calories }}
+                                        ккал
+                                        <small class="text-muted">{{ item.date }}</small>
+                                    </div>
+                                    <div class="meal-actions">
+                                        <button class="btn btn-sm btn-outline-primary edit-meal"
+                                            data-id="{{ item.id }}">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger delete-meal"
+                                            data-id="{{ item.id }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Статьи -->
+                <div class="section" id="articles">
+                    <h2 class="section-title">Статьи о здоровом питании</h2>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card article-card" data-article="1">
+                                <div class="card-body">
+                                    <h5 class="card-title">Основы здорового питания</h5>
+                                    <p class="card-text">Узнайте о базовых принципах здорового питания и их влиянии на
+                                        организм.</p>
+                                    <button class="btn btn-sm btn-primary read-article" data-article="1">Читать
+                                        далее</button>
+                                </div>
+                            </div>
+                            <div class="article-content" id="article-1">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h4>Основы здорового питания</h4>
+                                        <p>Здоровое питание — это не просто диета, а образ жизни, который помогает
+                                            поддерживать здоровье и хорошее самочувствие на протяжении всей жизни. Вот
+                                            основные принципы здорового питания:</p>
+                                        <h5>1. Сбалансированность</h5>
+                                        <p>Ваш рацион должен включать все необходимые питательные вещества: белки, жиры,
+                                            углеводы, витамины и минералы. Ни один продукт не содержит всех необходимых
+                                            веществ, поэтому важно разнообразие.</p>
+                                        <h5>2. Регулярность</h5>
+                                        <p>Принимайте пищу в одно и то же время, 4-5 раз в день небольшими порциями. Это
+                                            помогает поддерживать стабильный уровень сахара в крови и предотвращает
+                                            переедание.</p>
+                                        <h5>3. Умеренность</h5>
+                                        <p>Следите за размером порций. Даже полезные продукты могут навредить, если
+                                            употреблять их в избытке.</p>
+                                        <h5>4. Разнообразие</h5>
+                                        <p>Включайте в рацион продукты разных групп: овощи, фрукты, злаки, белковые
+                                            продукты, молочные продукты.</p>
+                                        <h5>5. Обработка продуктов</h5>
+                                        <p>Отдавайте предпочтение щадящим методам приготовления: варка, запекание,
+                                            тушение, приготовление на пару.</p>
+                                        <button class="btn btn-sm btn-secondary close-article"
+                                            data-article="1">Закрыть</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card article-card" data-article="2">
+                                <div class="card-body">
+                                    <h5 class="card-title">Сбалансированный рацион</h5>
+                                    <p class="card-text">Как составить сбалансированный рацион для поддержания здоровья.
+                                    </p>
+                                    <button class="btn btn-sm btn-primary read-article" data-article="2">Читать
+                                        далее</button>
+                                </div>
+                            </div>
+                            <div class="article-content" id="article-2">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h4>Сбалансированный рацион</h4>
+                                        <p>Сбалансированный рацион — это ключ к здоровью и хорошему самочувствию. Он
+                                            обеспечивает организм всеми необходимыми питательными веществами в
+                                            правильных пропорциях.</p>
+                                        <h5>Основные компоненты сбалансированного рациона:</h5>
+                                        <h6>1. Белки (10-15% от общего количества калорий)</h6>
+                                        <p>Белки необходимы для роста и восстановления тканей, производства ферментов и
+                                            гормонов. Источники: мясо, рыба, яйца, молочные продукты, бобовые, орехи.
+                                        </p>
+                                        <h6>2. Жиры (25-30% от общего количества калорий)</h6>
+                                        <p>Жиры обеспечивают энергию, помогают усваивать витамины A, D, E и K, защищают
+                                            органы. Источники: оливковое масло, авокадо, орехи, жирная рыба.</p>
+                                        <h6>3. Углеводы (45-65% от общего количества калорий)</h6>
+                                        <p>Углеводы — основной источник энергии. Предпочтение следует отдавать сложным
+                                            углеводам: цельнозерновым продуктам, овощам, фруктам.</p>
+                                        <h6>4. Витамины и минералы</h6>
+                                        <p>Необходимы для нормального функционирования организма. Содержатся в овощах,
+                                            фруктах, молочных продуктах, мясе.</p>
+                                        <h6>5. Клетчатка</h6>
+                                        <p>Улучшает пищеварение, помогает контролировать уровень сахара в крови.
+                                            Источники: овощи, фрукты, цельнозерновые продукты, бобовые.</p>
+                                        <button class="btn btn-sm btn-secondary close-article"
+                                            data-article="2">Закрыть</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card article-card" data-article="3">
+                                <div class="card-body">
+                                    <h5 class="card-title">Правильное питание</h5>
+                                    <p class="card-text">Советы по организации правильного питания в повседневной жизни.
+                                    </p>
+                                    <button class="btn btn-sm btn-primary read-article" data-article="3">Читать
+                                        далее</button>
+                                </div>
+                            </div>
+                            <div class="article-content" id="article-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h4>Правильное питание</h4>
+                                        <p>Правильное питание — это не временная диета, а постоянный образ жизни,
+                                            который помогает поддерживать здоровье и хорошее самочувствие.</p>
+                                        <h5>Практические советы по организации правильного питания:</h5>
+                                        <h6>1. Планирование меню</h6>
+                                        <p>Составляйте меню на неделю вперед. Это поможет избежать спонтанных покупок и
+                                            приготовления вредных блюд.</p>
+                                        <h6>2. Приготовление пищи дома</h6>
+                                        <p>Готовьте еду дома, чтобы контролировать состав и количество ингредиентов. Это
+                                            также поможет сэкономить деньги.</p>
+                                        <h6>3. Чтение этикеток</h6>
+                                        <p>Внимательно читайте состав продуктов. Избегайте продуктов с большим
+                                            количеством добавленного сахара, соли и искусственных добавок.</p>
+                                        <h6>4. Контроль порций</h6>
+                                        <p>Используйте тарелки меньшего размера, ешьте медленно и внимательно, чтобы
+                                            лучше контролировать количество съеденного.</p>
+                                        <h6>5. Достаточное количество воды</h6>
+                                        <p>Пейте не менее 8 стаканов воды в день. Иногда жажда может маскироваться под
+                                            голод.</p>
+                                        <h6>6. Регулярные приемы пищи</h6>
+                                        <p>Не пропускайте приемы пищи, особенно завтрак. Это поможет избежать переедания
+                                            в течение дня.</p>
+                                        <button class="btn btn-sm btn-secondary close-article"
+                                            data-article="3">Закрыть</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Рецепты -->
+                <div class="section" id="recipes">
+                    <h2 class="section-title">Рецепты здоровых блюд</h2>
+                    <div class="recipe-search">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="recipeSearch" placeholder="Поиск рецептов...">
+                            <button class="btn btn-primary" type="button" id="searchButton">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row" id="recipesList">
+                        <!-- Здесь будут отображаться рецепты пользователя -->
+                    </div>
+                    <div class="mt-4">
+                        <button class="btn btn-primary" id="addRecipeBtn">
+                            <i class="bi bi-plus"></i> Добавить новый рецепт
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Настройки -->
+                <div class="section" id="settings">
+                    <h2 class="section-title">Настройки профиля</h2>
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Личная информация</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <p><strong>Имя:</strong> {{ user_data.name }}</p>
+                                    <p><strong>Email:</strong> {{ user_data.email }}</p>
+                                    <p><strong>Дата рождения:</strong> {{ user_data.birth_date }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Вес:</strong> {{ user_data.weight }} кг</p>
+                                    <p><strong>Рост:</strong> {{ user_data.height }} см</p>
+                                    <p><strong>Образ жизни:</strong> {{ user_data.lifestyle }}</p>
+                                    <p><strong>Цель:</strong> {{ user_data.goal }}</p>
+                                </div>
+                            </div>
+                            <form id="settingsForm">
+                                <div class="mb-3">
+                                    <label for="newName" class="form-label">Новое имя</label>
+                                    <input type="text" class="form-control" id="newName" value="{{ user_data.name }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="currentPassword" class="form-label">Текущий пароль</label>
+                                    <input type="password" class="form-control" id="currentPassword">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="newPassword" class="form-label">Новый пароль</label>
+                                    <input type="password" class="form-control" id="newPassword">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Инициализация графика веса
+        let weightChart;
+        const weightData = {{ history| tojson }};
+        const initialWeight = {{ user_data.weight| tojson }};
+
+        function initWeightChart() {
+            const ctx = document.getElementById('weightChart');
+            if (!ctx) return;
+
+            // Добавляем начальный вес в историю, если его там нет
+            const weights = weightData
+                .filter(item => item.weight)
+                .map(item => ({
+                    x: new Date(item.date),
+                    y: item.weight
+                }))
+                .sort((a, b) => a.x - b.x);
+
+            // Если нет данных о весе, добавляем начальный вес
+            if (weights.length === 0 && initialWeight) {
+                weights.push({
+                    x: new Date(), // текущая дата
+                    y: initialWeight
+                });
+            }
+
+            if (weightChart) {
+                weightChart.destroy();
+            }
+
+            weightChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Вес (кг)',
+                        data: weights,
+                        borderColor: '#66B2B2',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day'
+                            }
+                        },
+                        y: {
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Приветствие по времени суток
+        function setGreeting() {
+            const hour = new Date().getHours();
+            let greeting = '';
+
+            if (hour >= 5 && hour < 12) {
+                greeting = 'Доброе утро';
+            } else if (hour >= 12 && hour < 18) {
+                greeting = 'Добрый день';
+            } else {
+                greeting = 'Добрый вечер';
+            }
+
+            document.getElementById('greeting').textContent = `${greeting}, {{ user_data.name }}!`;
+        }
+
+        // Обработка переключения секций
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', function () {
+                if (this.getAttribute('onclick')) return;
+
+                document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+
+                const sectionId = this.getAttribute('data-section');
+                document.querySelectorAll('.section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                document.getElementById(sectionId).classList.add('active');
+
+                if (sectionId === 'weight') {
+                    initWeightChart();
+                }
+            });
+        });
+
+        // Обработка статей
+        document.querySelectorAll('.read-article').forEach(button => {
+            button.addEventListener('click', function () {
+                const articleId = this.getAttribute('data-article');
+                document.querySelectorAll('.article-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(`article-${articleId}`).classList.add('active');
+            });
+        });
+
+        document.querySelectorAll('.close-article').forEach(button => {
+            button.addEventListener('click', function () {
+                const articleId = this.getAttribute('data-article');
+                document.getElementById(`article-${articleId}`).classList.remove('active');
+            });
+        });
+
+        // Обработка форм
+        const weightForm = document.getElementById('weightForm');
+        if (weightForm) {
+            weightForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                // Получаем данные формы
+                const formData = new FormData(weightForm);
+                const rawValue = formData.get('weight');
+                console.log('Исходное значение:', rawValue); // Для отладки
+
+                if (!rawValue) {
+                    alert('Пожалуйста, введите вес');
+                    return;
+                }
+
+                // Заменяем запятую на точку и преобразуем в число
+                const weight = parseFloat(rawValue.toString().replace(',', '.'));
+                console.log('Преобразованное значение:', weight); // Для отладки
+
+                if (isNaN(weight) || weight <= 0) {
+                    alert('Пожалуйста, введите корректный вес');
+                    return;
+                }
+
+                try {
+                    console.log('Отправка данных:', { weight }); // Для отладки
+                    const response = await fetch('/add_weight', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ weight })
+                    });
+
+                    const result = await response.json();
+                    console.log('Ответ сервера:', result); // Для отладки
+
+                    if (result.success) {
+                        weightForm.reset(); // Очищаем форму
+                        location.reload();
+                    } else {
+                        alert(result.message || 'Произошла ошибка при добавлении веса');
+                    }
+                } catch (error) {
+                    console.error('Ошибка:', error);
+                    alert('Произошла ошибка при добавлении веса');
+                }
+            });
+        }
+
+        document.getElementById('mealForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const mealData = {
+                meal_name: document.getElementById('mealName').value,
+                category: document.getElementById('mealCategory').value,
+                calories: parseInt(document.getElementById('mealCalories').value)
+            };
+
+            try {
+                const response = await fetch('/add_meal', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(mealData)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    // Очищаем форму
+                    this.reset();
+                    // Обновляем список приёмов пищи
+                    updateMealsList();
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Произошла ошибка при добавлении приема пищи');
+            }
+        });
+
+        // Функция для обновления списка приёмов пищи
+        async function updateMealsList() {
+            try {
+                const response = await fetch('/get_user_history');
+                if (!response.ok) {
+                    throw new Error('Ошибка при получении истории');
+                }
+                const history = await response.json();
+                const mealsList = document.getElementById('mealsList');
+                if (!mealsList) {
+                    console.error('Элемент mealsList не найден');
+                    return;
+                }
+
+                // Фильтруем только приемы пищи
+                const meals = history.filter(item => item.name && item.category && item.calories);
+
+                // Обновляем список
+                mealsList.innerHTML = meals.map(meal => `
+                    <div class="meal-item" data-id="${meal.id}">
+                        <div>
+                            <strong>${meal.name}</strong> (${meal.category}) - ${meal.calories} ккал
+                            <small class="text-muted">${meal.date}</small>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn btn-sm btn-outline-primary edit-meal" data-id="${meal.id}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger delete-meal" data-id="${meal.id}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Добавляем обработчики событий для кнопок
+                document.querySelectorAll('.delete-meal').forEach(button => {
+                    button.addEventListener('click', async (e) => {
+                        const mealId = e.currentTarget.dataset.id;
+                        if (confirm('Вы уверены, что хотите удалить этот прием пищи?')) {
+                            try {
+                                const response = await fetch(`/delete_meal/${mealId}`, {
+                                    method: 'DELETE'
+                                });
+                                if (response.ok) {
+                                    updateMealsList();
+                                } else {
+                                    alert('Ошибка при удалении приема пищи');
+                                }
+                            } catch (error) {
+                                console.error('Ошибка:', error);
+                                alert('Ошибка при удалении приема пищи');
+                            }
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error('Ошибка при обновлении списка приемов пищи:', error);
+            }
+        }
+
+        document.getElementById('settingsForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const newName = document.getElementById('newName').value;
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+
+            // Если имя изменилось, обновляем его
+            if (newName && newName !== '{{ user_data.name }}') {
+                try {
+                    const nameResponse = await fetch('/update_name', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ new_name: newName })
+                    });
+
+                    const nameResult = await nameResponse.json();
+                    if (!nameResult.success) {
+                        alert(nameResult.message);
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Ошибка при обновлении имени:', error);
+                    alert('Произошла ошибка при обновлении имени');
+                    return;
+                }
+            }
+
+            // Если введены оба пароля, обновляем пароль
+            if (currentPassword && newPassword) {
+                try {
+                    const passwordResponse = await fetch('/update_password', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            current_password: currentPassword,
+                            new_password: newPassword
+                        })
+                    });
+
+                    const passwordResult = await passwordResponse.json();
+                    if (!passwordResult.success) {
+                        alert(passwordResult.message);
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Ошибка при обновлении пароля:', error);
+                    alert('Произошла ошибка при обновлении пароля');
+                    return;
+                }
+            }
+
+            // Если хотя бы одно обновление было успешным, перезагружаем страницу
+            if ((newName && newName !== '{{ user_data.name }}') || (currentPassword && newPassword)) {
+                location.reload();
+            } else {
+                alert('Введите новые данные для обновления');
+            }
+        });
+
+        // Поиск рецептов
+        document.getElementById('searchButton').addEventListener('click', function () {
+            const searchTerm = document.getElementById('recipeSearch').value.toLowerCase();
+            document.querySelectorAll('.recipe-card').forEach(card => {
+                const title = card.querySelector('.card-title').textContent.toLowerCase();
+                if (title.includes(searchTerm)) {
+                    card.closest('.col-md-4').style.display = 'block';
+                } else {
+                    card.closest('.col-md-4').style.display = 'none';
+                }
+            });
+        });
+
+        // Добавление нового рецепта
+        document.getElementById('addRecipeBtn').addEventListener('click', function () {
+            // Создаем модальное окно для добавления рецепта
+            const modalHtml = `
+                <div class="modal fade" id="addRecipeModal" tabindex="-1" aria-labelledby="addRecipeModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="addRecipeModalLabel">Добавить новый рецепт</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="addRecipeForm">
+                                    <div class="mb-3">
+                                        <label for="recipeTitle" class="form-label">Название рецепта</label>
+                                        <input type="text" class="form-control" id="recipeTitle" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="recipeIngredients" class="form-label">Ингредиенты</label>
+                                        <textarea class="form-control" id="recipeIngredients" rows="3" required></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="recipeInstructions" class="form-label">Инструкция приготовления</label>
+                                        <textarea class="form-control" id="recipeInstructions" rows="3" required></textarea>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                <button type="button" class="btn btn-primary" id="saveRecipeBtn">Сохранить</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Добавляем модальное окно в DOM
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            // Инициализируем модальное окно
+            const modal = new bootstrap.Modal(document.getElementById('addRecipeModal'));
+            modal.show();
+
+            // Обработчик сохранения рецепта
+            document.getElementById('saveRecipeBtn').addEventListener('click', async function () {
+                const recipeData = {
+                    title: document.getElementById('recipeTitle').value,
+                    ingredients: document.getElementById('recipeIngredients').value,
+                    instructions: document.getElementById('recipeInstructions').value
+                };
+
+                try {
+                    const response = await fetch('/add_recipe', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(recipeData)
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        // Закрываем модальное окно
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('addRecipeModal'));
+                        modal.hide();
+
+                        // Удаляем модальное окно из DOM
+                        document.getElementById('addRecipeModal').remove();
+
+                        // Перезагружаем список рецептов
+                        loadUserRecipes();
+
+                        alert('Рецепт успешно добавлен!');
+                    } else {
+                        alert(result.message);
+                    }
+                } catch (error) {
+                    console.error('Ошибка:', error);
+                    alert('Произошла ошибка при добавлении рецепта');
+                }
+            });
+
+            // Удаляем модальное окно из DOM при закрытии
+            document.getElementById('addRecipeModal').addEventListener('hidden.bs.modal', function () {
+                this.remove();
+            });
+        });
+
+        // Функция для добавления обработчиков событий для кнопок рецептов
+        function addRecipeEventListeners() {
+            // Обработка редактирования рецептов
+            document.querySelectorAll('.edit-recipe').forEach(button => {
+                button.addEventListener('click', function () {
+                    const recipeId = this.getAttribute('data-id');
+                    if (!recipeId) {
+                        alert('Ошибка: ID рецепта не найден');
+                        return;
+                    }
+
+                    const recipeCard = this.closest('.recipe-card');
+                    const recipeTitle = recipeCard.querySelector('.card-title').textContent;
+
+                    // Создаем модальное окно для редактирования рецепта
+                    const modalHtml = `
+                        <div class="modal fade" id="editRecipeModal" tabindex="-1" aria-labelledby="editRecipeModalLabel" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="editRecipeModalLabel">Редактировать рецепт</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form id="editRecipeForm">
+                                            <input type="hidden" id="editRecipeId" value="${recipeId}">
+                                            <div class="mb-3">
+                                                <label for="editRecipeTitle" class="form-label">Название рецепта</label>
+                                                <input type="text" class="form-control" id="editRecipeTitle" value="${recipeTitle}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="editRecipeIngredients" class="form-label">Ингредиенты</label>
+                                                <textarea class="form-control" id="editRecipeIngredients" rows="3" required></textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="editRecipeInstructions" class="form-label">Инструкция приготовления</label>
+                                                <textarea class="form-control" id="editRecipeInstructions" rows="3" required></textarea>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                        <button type="button" class="btn btn-primary" id="updateRecipeBtn">Сохранить</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Добавляем модальное окно в DOM
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+                    // Инициализируем модальное окно
+                    const modal = new bootstrap.Modal(document.getElementById('editRecipeModal'));
+                    modal.show();
+
+                    // Загружаем данные рецепта
+                    fetch(`/get_recipe/${recipeId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                document.getElementById('editRecipeIngredients').value = data.recipe.ingredients;
+                                document.getElementById('editRecipeInstructions').value = data.recipe.instructions;
+                            } else {
+                                alert(data.message);
+                                modal.hide();
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Ошибка при загрузке данных рецепта:', error);
+                            alert('Произошла ошибка при загрузке данных рецепта');
+                            modal.hide();
+                        });
+
+                    // Обработчик обновления рецепта
+                    document.getElementById('updateRecipeBtn').addEventListener('click', async function () {
+                        const recipeData = {
+                            id: document.getElementById('editRecipeId').value,
+                            title: document.getElementById('editRecipeTitle').value,
+                            ingredients: document.getElementById('editRecipeIngredients').value,
+                            instructions: document.getElementById('editRecipeInstructions').value
+                        };
+
+                        try {
+                            const response = await fetch('/update_recipe', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(recipeData)
+                            });
+
+                            const result = await response.json();
+                            if (result.success) {
+                                // Закрываем модальное окно
+                                const modal = bootstrap.Modal.getInstance(document.getElementById('editRecipeModal'));
+                                modal.hide();
+
+                                // Удаляем модальное окно из DOM
+                                document.getElementById('editRecipeModal').remove();
+
+                                // Перезагружаем список рецептов
+                                loadUserRecipes();
+
+                                alert('Рецепт успешно обновлен!');
+                            } else {
+                                alert(result.message);
+                            }
+                        } catch (error) {
+                            console.error('Ошибка:', error);
+                            alert('Произошла ошибка при обновлении рецепта');
+                        }
+                    });
+
+                    // Удаляем модальное окно из DOM при закрытии
+                    document.getElementById('editRecipeModal').addEventListener('hidden.bs.modal', function () {
+                        this.remove();
+                    });
+                });
+            });
+
+            // Обработка удаления рецептов
+            document.querySelectorAll('.delete-recipe').forEach(button => {
+                button.addEventListener('click', function () {
+                    const recipeId = this.getAttribute('data-id');
+                    if (!recipeId) {
+                        alert('Ошибка: ID рецепта не найден');
+                        return;
+                    }
+
+                    if (confirm('Вы уверены, что хотите удалить этот рецепт?')) {
+                        fetch(`/delete_recipe/${recipeId}`, {
+                            method: 'DELETE'
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    // Перезагружаем список рецептов
+                                    loadUserRecipes();
+
+                                    alert('Рецепт успешно удален!');
+                                } else {
+                                    alert(data.message);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Ошибка:', error);
+                                alert('Произошла ошибка при удалении рецепта');
+                            });
+                    }
+                });
+            });
+        }
+
+        // Инициализация обработчиков событий для кнопок рецептов
+        addRecipeEventListeners();
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function () {
+            initWeightChart();
+            setGreeting();
+            loadUserRecipes();
+            updateMealsList(); // Добавляем обновление списка приёмов пищи
+        });
+
+        // Функция для загрузки рецептов пользователя
+        function loadUserRecipes() {
+            console.log('Начинаем загрузку рецептов...');
+            fetch('/get_user_recipes')
+                .then(response => {
+                    console.log('Получен ответ от сервера:', response);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Получены данные:', data);
+                    if (data.success) {
+                        const recipesList = document.getElementById('recipesList');
+                        recipesList.innerHTML = ''; // Очищаем список рецептов
+
+                        if (data.recipes.length === 0) {
+                            console.log('Рецепты не найдены');
+                            recipesList.innerHTML = '<div class="col-12 text-center"><p>У вас пока нет рецептов. Добавьте свой первый рецепт!</p></div>';
+                            return;
+                        }
+
+                        console.log(`Найдено ${data.recipes.length} рецептов`);
+                        data.recipes.forEach(recipe => {
+                            console.log('Обработка рецепта:', recipe);
+                            const recipeHtml = `
+                                <div class="col-md-4 mb-4">
+                                    <div class="card recipe-card" data-id="${recipe.id}">
+                                        <div class="card-body">
+                                            <h5 class="card-title">${recipe.title}</h5>
+                                            <p class="card-text">${recipe.instructions.substring(0, 100)}${recipe.instructions.length > 100 ? '...' : ''}</p>
+                                            <div class="recipe-actions">
+                                                <button class="btn btn-sm btn-outline-primary edit-recipe" data-id="${recipe.id}">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger delete-recipe" data-id="${recipe.id}">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            recipesList.insertAdjacentHTML('beforeend', recipeHtml);
+                        });
+
+                        // Добавляем обработчики для кнопок рецептов
+                        addRecipeEventListeners();
+                    } else {
+                        console.error('Ошибка при загрузке рецептов:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка при загрузке рецептов:', error);
+                });
+        }
+    </script>
 </body>
+
 </html>
