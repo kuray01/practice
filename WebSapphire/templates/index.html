@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sapphire - дневник питания</title>
+    <link rel="icon" href="{{ url_for('static', filename='img/logo.png') }}" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Italiana&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#BCD9D7] text-[#2A3A3A] flex items-center justify-center min-h-screen">
+
+    <div class="w-full max-w-md px-8 py-10 rounded-lg shadow-lg text-center">
+      <h1 class="text-5xl font-bold mb-6">Sapphire</h1>
+      <p class="text-xl mb-6">Вход в аккаунт</p>
+  
+      <form class="space-y-4">
+        <input
+          type="email"
+          placeholder="Введите email"
+          class="w-full px-4 py-2 rounded-full border border-[#76B0A7] focus:outline-none focus:ring-2 focus:ring-[#76B0A7] bg-white"
+        />
+        <input
+          type="password"
+          placeholder="Введите пароль"
+          class="w-full px-4 py-2 rounded-full border border-[#76B0A7] focus:outline-none focus:ring-2 focus:ring-[#76B0A7] bg-white"
+        />
+  
+        <div class="flex justify-center space-x-4 pt-4">
+          <button
+            type="submit"
+            class="px-6 py-2 rounded bg-[#76B0A7] text-white hover:bg-[#5a8d87] transition-colors"
+            onclick="window.location.href='main'">
+            >
+            Войти
+          </button>
+          <button
+          onclick="window.location.href='register'"
+          type="button"
+          class="px-6 py-2 rounded border border-[#76B0A7] text-[#2A3A3A] hover:bg-[#d6edea] transition-colors"
+          >
+            Регистрация
+          </button>
+        </div>
+      </form>
+    </div>
+  
+  </body>
+</html>
